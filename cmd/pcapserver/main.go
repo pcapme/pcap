@@ -18,7 +18,7 @@ const (
 type server struct{}
 
 func (s *server) Listen(ctx context.Context, in *pb.ListenRequest) (*pb.ListenReply, error) {
-    log.Printf("Received: (%v, %v)", in.Filter, in.Interface)
+    log.Printf("Received: %v", in)
     return &pb.ListenReply{
         Success: true,
     }, nil

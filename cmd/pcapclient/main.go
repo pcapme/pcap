@@ -33,8 +33,8 @@ func main() {
 	defer cancel()
 	r, err := c.Listen(ctx, &pb.ListenRequest{Filter: "arp", Interface: iface})
 	if err != nil {
-		log.Fatalf("could not greet: %v", err)
+		log.Fatalf("Could not listen: %v", err)
 	}
-	log.Printf("Greeting: %b", r.Success)
+	log.Printf("Result: %t", r.Success)
 }
 
