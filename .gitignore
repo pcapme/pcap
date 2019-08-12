@@ -1,3 +1,10 @@
+# Editor and IDE
 /.idea
-*.pb.go
 *.swp
+
+# Generated protocol buffer files
+*.pb.go
+
+# Output binaries
+/pcapserver
+/pcapclient
