@@ -1,29 +1,29 @@
-CLIENT_BINARY_NAME=pcapclient
-SERVER_BINARY_NAME=pcapserver
+# List of expected binary names.
+# (Everything in "cmd/*" should just be directory names.)
+BINARIES=$(notdir $(wildcard cmd/*))
 
-all: api test build
+all: test build
 
-$(CLIENT_BINARY_NAME):
-	go build -o $(CLIENT_BINARY_NAME) -v ./cmd/pcapclient
-
-$(SERVER_BINARY_NAME):
-	go build -o $(SERVER_BINARY_NAME) -v ./cmd/pcapserver
+$(BINARIES): api
+	go build -o $@ -v ./cmd/$@
 
 api:
 	go generate ./...
 
-build: api $(SERVER_BINARY_NAME) $(CLIENT_BINARY_NAME)
+build: $(BINARIES)
 
-test: 
+test: api
 	go test -v ./...
 
 clean: 
 	go clean -x
-	rm -f $(SERVER_BINARY_NAME)
-	rm -f $(CLIENT_BINARY_NAME)
+	rm -f $(BINARIES)
 	rm -f api/*.pb.go
 
-install:
-	$(GOINSTALL) ./...
+install: api
+	go install ./...
  
-.PHONY: api build test clean install $(CLIENT_BINARY_NAME) $(SERVER_BINARY_NAME)
+# Useful when debugging, such as "make print-BINARIES".
+print-%  : ; @echo $* = $($*)
+
+.PHONY: api build test clean install $(BINARIES)
