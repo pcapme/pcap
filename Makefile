@@ -25,8 +25,11 @@ install: api
 
 format:
 	go fmt ./...
+
+docs:
+	godoc -http=localhost:8282
  
 # Useful when debugging, such as "make print-BINARIES".
 print-%  : ; @echo $* = $($*)
 
-.PHONY: api build test clean install $(BINARIES)
+.PHONY: api build clean docs install $(BINARIES)
