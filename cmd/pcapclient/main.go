@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	address     = "localhost:50051"
+	address          = "localhost:50051"
 	defaultInterface = "eth0"
 )
 
@@ -37,4 +37,3 @@ func main() {
 	}
 	log.Printf("Result: %t", r.Success)
 }
-

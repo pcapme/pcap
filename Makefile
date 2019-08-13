@@ -22,6 +22,9 @@ clean:
 
 install: api
 	go install ./...
+
+format:
+	go fmt ./...
  
 # Useful when debugging, such as "make print-BINARIES".
 print-%  : ; @echo $* = $($*)
