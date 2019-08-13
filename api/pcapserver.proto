@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package pcapserver;
+package api;
 
 service PCAP {
   rpc Listen (ListenRequest) returns (ListenReply) {}

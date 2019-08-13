@@ -7,7 +7,7 @@ import (
 	"log"
 	"net"
 
-	pb "github.com/mpontillo/pcapserver/api"
+	pb "github.com/mpontillo/pcap/api"
 	"google.golang.org/grpc"
 )
 
