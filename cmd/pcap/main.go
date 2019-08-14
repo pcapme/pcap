@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/mpontillo/pcap"
 	"log"
 	"os"
 	"time"
@@ -10,14 +11,11 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	address          = "localhost:50051"
-	defaultInterface = "eth0"
-)
+const defaultInterface = "eth0"
 
 func main() {
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	conn, err := grpc.Dial("unix://"+pcap.DefaultSocketPath, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
