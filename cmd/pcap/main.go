@@ -29,7 +29,11 @@ func main() {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r, err := c.Listen(ctx, &pb.ListenRequest{Filter: "arp", Interface: iface})
+	ifaces := []string{iface}
+	initRequest := &pb.InitRequest{}
+	initRequest.OptionalFilter = &pb.InitRequest_Filter{Filter: "arp"}
+	initRequest.Interfaces = ifaces
+	r, err := c.Listen(ctx, initRequest)
 	if err != nil {
 		log.Fatalf("Could not listen: %v", err)
 	}

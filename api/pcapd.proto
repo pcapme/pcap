@@ -3,14 +3,24 @@ syntax = "proto3";
 package api;
 
 service PCAP {
-  rpc Listen (ListenRequest) returns (ListenReply) {}
+    rpc Listen (InitRequest) returns (InitReply) {}
 }
 
-message ListenRequest {
-    string filter = 1;
-    string interface = 2;
+message InitRequest {
+    oneof optional_filter {
+        string filter = 1;
+    }
+    oneof optional_alias {
+        string alias = 2;
+    }
+    repeated string interfaces = 3;
 }
 
-message ListenReply {
+message InitReply {
     bool success = 1;
+    oneof optional_filter {
+        string filter = 2;
+    }
+    string alias = 3;
+    repeated string interfaces = 4;
 }

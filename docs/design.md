@@ -46,7 +46,7 @@ pcap replay [remote:]<id|alias> [--live]
 
 Outputs all saved capture data in the form of a `pcap-savefile`.
 
-Optionally continues the output stream,
+Optionally continues the output stream "live".
 
 ### Getting Capture Data in Real Time
 
@@ -71,5 +71,3 @@ For remote connections, `pcapd` will listen on port `2020` for its communication
 ## Challenges
 
 Capturing packets from a remote source will require adjusting the filter to exclude the transport-layer stream being used to transfer the capture data. This can most likely be narrowed down to a particular TCP (source, destination) port, assuming the socket can be queried to find out that information.
-
-

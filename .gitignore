@@ -6,5 +6,5 @@
 *.pb.go
 
 # Output binaries
-/pcapserver
-/pcapclient
+/pcapd
+/pcap

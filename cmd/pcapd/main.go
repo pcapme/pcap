@@ -16,9 +16,9 @@ import (
 
 type server struct{}
 
-func (s *server) Listen(ctx context.Context, in *pb.ListenRequest) (*pb.ListenReply, error) {
+func (s *server) Listen(ctx context.Context, in *pb.InitRequest) (*pb.InitReply, error) {
 	log.Printf("Received: %v", in)
-	return &pb.ListenReply{
+	return &pb.InitReply{
 		Success: true,
 	}, nil
 }
@@ -26,7 +26,7 @@ func (s *server) Listen(ctx context.Context, in *pb.ListenRequest) (*pb.ListenRe
 func main() {
 	lis, err := net.Listen("unix", pcap.DefaultSocketPath)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Fatalf("Failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
 
@@ -43,7 +43,4 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
-
-
-
 }
