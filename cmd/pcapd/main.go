@@ -16,7 +16,7 @@ import (
 
 type server struct{}
 
-func (s *server) Listen(ctx context.Context, in *pb.InitRequest) (*pb.InitReply, error) {
+func (s *server) Init(ctx context.Context, in *pb.InitRequest) (*pb.InitReply, error) {
 	log.Printf("Received: %v", in)
 	return &pb.InitReply{
 		Success: true,

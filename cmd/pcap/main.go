@@ -33,9 +33,9 @@ func main() {
 	initRequest := &pb.InitRequest{}
 	initRequest.OptionalFilter = &pb.InitRequest_Filter{Filter: "arp"}
 	initRequest.Interfaces = ifaces
-	r, err := c.Listen(ctx, initRequest)
+	r, err := c.Init(ctx, initRequest)
 	if err != nil {
 		log.Fatalf("Could not listen: %v", err)
 	}
-	log.Printf("Result: %t", r.Success)
+	log.Printf("Result: success=%t (%T): %+v", r.Success, r, r)
 }
