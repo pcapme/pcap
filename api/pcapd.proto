@@ -7,8 +7,57 @@ service PCAP {
     rpc Init (InitRequest) returns (InitReply) {}
 }
 
+enum AddressType {
+    ETHERNET = 0;
+    IPV4 = 4;
+    IPV6 = 6;
+}
+
+enum AddressFlags {
+    UNKNOWN_ADDRESS_FLAGS = 0;
+    UNICAST = 0x1;
+    BROADCAST = 0x2;
+    MULTICAST = 0x3;
+}
+
+// via https://github.com/the-tcpdump-group/libpcap/blob/master/pcap/pcap.h
+
+// #define PCAP_IF_LOOPBACK   0x00000001 /* interface is loopback */
+// #define PCAP_IF_UP         0x00000002 /* interface is up */
+// #define PCAP_IF_RUNNING    0x00000004 /* interface is running */
+// #define PCAP_IF_WIRELESS   0x00000008 /* interface is wireless (*NOT* necessarily Wi-Fi!) */
+// #define PCAP_IF_CONNECTION_STATUS                0x00000030 /* connection status: */
+// #define PCAP_IF_CONNECTION_STATUS_UNKNOWN        0x00000000 /* unknown */
+// #define PCAP_IF_CONNECTION_STATUS_CONNECTED      0x00000010 /* connected */
+// #define PCAP_IF_CONNECTION_STATUS_DISCONNECTED   0x00000020 /* disconnected */
+// #define PCAP_IF_CONNECTION_STATUS_NOT_APPLICABLE 0x00000030 /* not applicable */
+
+enum InterfaceFlags {
+    option allow_alias = true;
+    IFF_UNKNOWN = 0;
+    IFF_LOOPBACK = 0x1;
+    IFF_UP = 0x2;
+    IFF_RUNNING = 0x4;
+    PCAP_IF_WIRELESS = 0x8;
+    PCAP_IF_CONNECTION_STATUS = 0x30;
+    PCAP_IF_CONNECTION_STATUS_UNKNOWN = 0x00;
+    PCAP_IF_CONNECTION_STATUS_CONNECTED = 0x10;
+    PCAP_IF_CONNECTION_STATUS_DISCONNECTED = 0x20;
+    PCAP_IF_CONNECTION_STATUS_NOT_APPLICABLE = 0x30;
+}
+
+message Address {
+    AddressType type = 1;
+    string value = 2;
+    int32 prefixlen = 3;
+    string netmask = 4;
+    uint64 flags = 5;
+}
+
 message Interface {
     string name = 1;
+    uint64 flags = 5;
+    repeated Address addresses = 2;
 }
 
 message GetInterfacesRequest {
