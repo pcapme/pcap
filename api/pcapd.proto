@@ -3,7 +3,21 @@ syntax = "proto3";
 package api;
 
 service PCAP {
+    rpc GetInterfaces (GetInterfacesRequest) returns (GetInterfacesReply) {}
     rpc Init (InitRequest) returns (InitReply) {}
+}
+
+message Interface {
+    string name = 1;
+}
+
+message GetInterfacesRequest {
+}
+
+message GetInterfacesReply {
+    bool success = 1;
+    // repeated string interfaces = 2;
+    repeated Interface interfaces = 2;
 }
 
 message InitRequest {
