@@ -33,11 +33,11 @@ func (c *Client) Disconnect() {
 	c.socket.Close()
 }
 
-func (c *Client) Init() {
+func (c *Client) Init(args []string) {
 	// Contact the server and print out its response.
 	iface := defaultInterface
-	if len(os.Args) > 1 {
-		iface = os.Args[1]
+	if len(args) > 0 {
+		iface = args[0]
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -59,13 +59,29 @@ func Execute() {
 		Long: `pcap: a command-line tool for managing packet captures.
         Uses gRPC over a UNIX socket to communicate with a 'pcapd' server.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			// Do Stuff Here
-			fmt.Printf("cmd: %+v\nargs:%+v\n\n", cmd, args)
-			client := NewUNIXSocketClient()
-			client.Init()
-			client.Disconnect()
+			_ = cmd.Help()
+			// fmt.Printf("\n\ncmd: %+v\nargs:%+v\n\n", cmd, args)
 		},
 	}
+	var versionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Show version string.",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("pcap version v0.0.1")
+		},
+	}
+	var initCmd = &cobra.Command{
+		Use:   "init",
+		Short: "Initialize a new capture definition.",
+		Run: func(cmd *cobra.Command, args []string) {
+			client := NewUNIXSocketClient()
+			defer client.Disconnect()
+			client.Init(args)
+		},
+	}
+
+	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(initCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
