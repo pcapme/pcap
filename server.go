@@ -12,13 +12,6 @@ import (
 
 type server struct{}
 
-func (s *server) GetInterfaces(ctx context.Context, in *api.GetInterfacesRequest) (*api.GetInterfacesReply, error) {
-	log.Printf("Received: %v", in)
-	return &api.GetInterfacesReply{
-		Success: true,
-	}, nil
-}
-
 func (s *server) Init(ctx context.Context, in *api.InitRequest) (*api.InitReply, error) {
 	log.Printf("Received: %v", in)
 	filter := in.GetFilter()
@@ -26,6 +19,48 @@ func (s *server) Init(ctx context.Context, in *api.InitRequest) (*api.InitReply,
 	return &api.InitReply{
 		Success: err == nil,
 	}, nil
+}
+
+func (s *server) InterfaceList(ctx context.Context, in *api.InterfaceListRequest) (*api.InterfaceListReply, error) {
+	log.Printf("Received: %v", in)
+	result := &api.InterfaceListReply{
+		Success: false,
+	}
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return result, nil
+	}
+	resultInterfaces := make([]*api.Interface, len(interfaces))
+	for i, iface := range interfaces {
+		resultInterface := &api.Interface{Name: iface.Name}
+		resultAddresses := make([]*api.Address, 0, 8)
+		resultAddresses = append(resultAddresses, &api.Address{
+			Type: api.AddressType_HARDWARE,
+			Value: iface.HardwareAddr.String(),
+		})
+		addrs, _ := iface.Addrs()
+		for _, addr := range addrs {
+			ip := net.ParseIP(addr.String())
+			if ip.To4() != nil {
+				// Found an IPv4 address.
+				resultAddresses = append(resultAddresses, &api.Address{
+					Type: api.AddressType_IPV4,
+					Value: iface.HardwareAddr.String(),
+				})
+			} else {
+				// Found an IPv6 address.
+				resultAddresses = append(resultAddresses, &api.Address{
+					Type: api.AddressType_IPV6,
+					Value: iface.HardwareAddr.String(),
+				})
+			}
+		}
+		resultInterface.Addresses = resultAddresses
+		resultInterfaces[i] = resultInterface
+	}
+	result.Success = true
+	result.Interfaces = resultInterfaces
+	return result, nil
 }
 
 func StartUnixSocketServer() {

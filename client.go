@@ -52,6 +52,18 @@ func (c *Client) Init(args []string) {
 	log.Printf("Result: success=%t (%T): %+v", r.Success, r, r)
 }
 
+func (c *Client) InterfaceList(args []string) {
+	// Contact the server and print out its response.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	request := &api.InterfaceListRequest{}
+	reply, err := c.api.InterfaceList(ctx, request)
+	if err != nil {
+		log.Fatalf("Error listing interfaces: %v", err)
+	}
+	log.Printf("Result: success=%t (%T): %+v", reply.Success, reply, reply)
+}
+
 func Execute() {
 	var rootCmd = &cobra.Command{
 		Use:   "pcap",
@@ -80,8 +92,29 @@ func Execute() {
 		},
 	}
 
+	var interfaceCmd = &cobra.Command{
+		Use:   "interface",
+		Short: "Work with interfaces on the pcap host.",
+		Run: func(cmd *cobra.Command, args []string) {
+			_ = cmd.Help()
+		},
+	}
+
+	var interfaceListCmd = &cobra.Command{
+		Use:   "list",
+		Short: "Lists available interfaces.",
+		Run: func(cmd *cobra.Command, args []string) {
+			client := NewUNIXSocketClient()
+			defer client.Disconnect()
+			client.InterfaceList(args)
+		},
+	}
+
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(interfaceCmd)
+
+	interfaceCmd.AddCommand(interfaceListCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)

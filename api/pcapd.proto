@@ -3,12 +3,13 @@ syntax = "proto3";
 package api;
 
 service PCAP {
-    rpc GetInterfaces (GetInterfacesRequest) returns (GetInterfacesReply) {}
+    rpc InterfaceList (InterfaceListRequest) returns (InterfaceListReply) {}
     rpc Init (InitRequest) returns (InitReply) {}
 }
 
 enum AddressType {
-    ETHERNET = 0;
+    UNKNOWN_ADDRESS_TYPE = 0;
+    HARDWARE = 1;
     IPV4 = 4;
     IPV6 = 6;
 }
@@ -60,10 +61,10 @@ message Interface {
     repeated Address addresses = 2;
 }
 
-message GetInterfacesRequest {
+message InterfaceListRequest {
 }
 
-message GetInterfacesReply {
+message InterfaceListReply {
     bool success = 1;
     // repeated string interfaces = 2;
     repeated Interface interfaces = 2;
