@@ -13,7 +13,7 @@ import (
 type server struct{}
 
 func (s *server) Init(ctx context.Context, in *api.InitRequest) (*api.InitReply, error) {
-	log.Printf("Received: %v", in)
+	log.Printf("Init(%+v)", in)
 	filter := in.GetFilter()
 	err := Capture(CaptureRequest{Filter: filter, Interfaces: in.GetInterfaces()})
 	return &api.InitReply{
@@ -22,7 +22,7 @@ func (s *server) Init(ctx context.Context, in *api.InitRequest) (*api.InitReply,
 }
 
 func (s *server) InterfaceList(ctx context.Context, in *api.InterfaceListRequest) (*api.InterfaceListReply, error) {
-	log.Printf("Received: %v", in)
+	log.Printf("InterfaceList(%+v)", in)
 	result := &api.InterfaceListReply{
 		Success: false,
 	}
