@@ -57,8 +57,8 @@ message Address {
 
 message Interface {
     string name = 1;
-    uint64 flags = 5;
-    repeated Address addresses = 2;
+    uint64 flags = 2;
+    repeated Address addresses = 3;
 }
 
 message InterfaceListRequest {
@@ -66,7 +66,6 @@ message InterfaceListRequest {
 
 message InterfaceListReply {
     bool success = 1;
-    // repeated string interfaces = 2;
     repeated Interface interfaces = 2;
 }
 

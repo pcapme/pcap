@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/mpontillo/pcap/api"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"log"
@@ -61,7 +62,15 @@ func (c *Client) InterfaceList(args []string) {
 	if err != nil {
 		log.Fatalf("Error listing interfaces: %v", err)
 	}
-	log.Printf("Result: success=%t (%T): %+v", reply.Success, reply, reply)
+	//log.Printf("Result: success=%t (%T): %+v", reply.Success, reply, reply)
+	data := make([][]string, 0, len(reply.Interfaces))
+	for _, iface := range reply.Interfaces {
+		data = append(data, []string{iface.Name})
+	}
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Name"})
+	table.AppendBulk(data)
+	table.Render()
 }
 
 func Execute() {
