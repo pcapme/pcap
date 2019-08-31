@@ -53,11 +53,11 @@ func (c *Client) Init(args []string) {
 	log.Printf("Result: success=%t (%T): %+v", r.Success, r, r)
 }
 
-func (c *Client) InterfaceList(args []string) {
+func (c *Client) InterfaceList(all bool) {
 	// Contact the server and print out its response.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	request := &api.InterfaceListRequest{}
+	request := &api.InterfaceListRequest{All: all}
 	reply, err := c.api.InterfaceList(ctx, request)
 	if err != nil {
 		log.Fatalf("Error listing interfaces: %v", err)
@@ -109,15 +109,20 @@ func Execute() {
 		},
 	}
 
+	var interfacesListAll bool
 	var interfaceListCmd = &cobra.Command{
 		Use:   "list",
 		Short: "Lists available interfaces.",
 		Run: func(cmd *cobra.Command, args []string) {
 			client := NewUNIXSocketClient()
 			defer client.Disconnect()
-			client.InterfaceList(args)
+			client.InterfaceList(interfacesListAll)
 		},
 	}
+	interfaceListCmd.Flags().BoolVarP(
+		&interfacesListAll,
+		"all", "a", false,
+		"List all interfaces. (By default, only includes those that are link-up.)")
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(initCmd)

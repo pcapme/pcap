@@ -62,6 +62,7 @@ message Interface {
 }
 
 message InterfaceListRequest {
+    bool all = 1;
 }
 
 message InterfaceListReply {

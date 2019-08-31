@@ -3,6 +3,7 @@ package pcap
 import (
 	"context"
 	"github.com/mpontillo/pcap/api"
+	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -14,7 +15,9 @@ type server struct{}
 
 func (s *server) Init(ctx context.Context, in *api.InitRequest) (*api.InitReply, error) {
 	log.Printf("Init(%+v)", in)
+	log.Printf("GetOptionalFilter() = %+v", in.GetOptionalFilter())
 	filter := in.GetFilter()
+	log.Printf("GetFilter() = %+v", filter)
 	err := Capture(CaptureRequest{Filter: filter, Interfaces: in.GetInterfaces()})
 	return &api.InitReply{
 		Success: err == nil,
@@ -30,8 +33,12 @@ func (s *server) InterfaceList(ctx context.Context, in *api.InterfaceListRequest
 	if err != nil {
 		return result, nil
 	}
-	resultInterfaces := make([]*api.Interface, len(interfaces))
-	for i, iface := range interfaces {
+	resultInterfaces := make([]*api.Interface, 0, len(interfaces))
+	for _, iface := range interfaces {
+		isUp := iface.Flags & unix.IFF_UP != 0
+		if !isUp && !in.All {
+			continue
+		}
 		resultInterface := &api.Interface{Name: iface.Name}
 		resultAddresses := make([]*api.Address, 0, 8)
 		resultAddresses = append(resultAddresses, &api.Address{
@@ -56,7 +63,7 @@ func (s *server) InterfaceList(ctx context.Context, in *api.InterfaceListRequest
 			}
 		}
 		resultInterface.Addresses = resultAddresses
-		resultInterfaces[i] = resultInterface
+		resultInterfaces = append(resultInterfaces, resultInterface)
 	}
 	result.Success = true
 	result.Interfaces = resultInterfaces
