@@ -2,6 +2,7 @@ package pcap
 
 import (
 	"context"
+	"fmt"
 	"github.com/mpontillo/pcap/api"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
@@ -9,6 +10,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 )
 
 type server struct{}
@@ -35,34 +37,42 @@ func (s *server) InterfaceList(ctx context.Context, in *api.InterfaceListRequest
 	}
 	resultInterfaces := make([]*api.Interface, 0, len(interfaces))
 	for _, iface := range interfaces {
-		isUp := iface.Flags & unix.IFF_UP != 0
-		if !isUp && !in.All {
+		isUp := iface.Flags&unix.IFF_UP != 0
+		if !(isUp || in.All) {
+			// Skip the interface if it it's UP, or if --all wasn't specified.
 			continue
 		}
-		resultInterface := &api.Interface{Name: iface.Name}
-		resultAddresses := make([]*api.Address, 0, 8)
-		resultAddresses = append(resultAddresses, &api.Address{
-			Type: api.AddressType_HARDWARE,
-			Value: iface.HardwareAddr.String(),
-		})
+		resultInterface := &api.Interface{Name: iface.Name, Up: isUp}
+		resultInterface.EthernetAddresses = make([]*api.Address, 0, 8)
+		resultInterface.Ipv4Addresses = make([]*api.Address, 0, 8)
+		resultInterface.Ipv6Addresses = make([]*api.Address, 0, 8)
+		resultInterface.EthernetAddresses = append(
+			resultInterface.EthernetAddresses,
+			&api.Address{
+				Value: iface.HardwareAddr.String(),
+			})
 		addrs, _ := iface.Addrs()
 		for _, addr := range addrs {
-			ip := net.ParseIP(addr.String())
+			address := strings.Split(addr.String(), "/")[0]
+			ip := net.ParseIP(address)
 			if ip.To4() != nil {
+				fmt.Printf("[4] [%s] ip: %+v\n", addr.String(), ip)
 				// Found an IPv4 address.
-				resultAddresses = append(resultAddresses, &api.Address{
-					Type: api.AddressType_IPV4,
-					Value: iface.HardwareAddr.String(),
-				})
+				resultInterface.Ipv4Addresses = append(
+					resultInterface.Ipv4Addresses,
+					&api.Address{
+						Value: address,
+					})
 			} else {
+				fmt.Printf("[6] [%s] ip: %+v\n", addr.String(), ip)
 				// Found an IPv6 address.
-				resultAddresses = append(resultAddresses, &api.Address{
-					Type: api.AddressType_IPV6,
-					Value: iface.HardwareAddr.String(),
-				})
+				resultInterface.Ipv6Addresses = append(
+					resultInterface.Ipv6Addresses,
+					&api.Address{
+						Value: address,
+					})
 			}
 		}
-		resultInterface.Addresses = resultAddresses
 		resultInterfaces = append(resultInterfaces, resultInterface)
 	}
 	result.Success = true

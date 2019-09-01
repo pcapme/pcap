@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -53,6 +54,14 @@ func (c *Client) Init(args []string) {
 	log.Printf("Result: success=%t (%T): %+v", r.Success, r, r)
 }
 
+func renderAddresses(addresses []*api.Address) string {
+	result := make([]string, len(addresses))
+	for i, address := range addresses {
+		result[i] = address.Value
+	}
+	return strings.Join(result, "\n")
+}
+
 func (c *Client) InterfaceList(all bool) {
 	// Contact the server and print out its response.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -65,11 +74,18 @@ func (c *Client) InterfaceList(all bool) {
 	//log.Printf("Result: success=%t (%T): %+v", reply.Success, reply, reply)
 	data := make([][]string, 0, len(reply.Interfaces))
 	for _, iface := range reply.Interfaces {
-		data = append(data, []string{iface.Name})
+		data = append(
+			data, []string{
+				iface.Name,
+				renderAddresses(iface.EthernetAddresses),
+				renderAddresses(iface.Ipv4Addresses),
+				renderAddresses(iface.Ipv6Addresses),
+			})
 	}
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name"})
+	table.SetHeader([]string{"Name", "Hardware Addresses", "IPv4 Addresses", "IPv6 Addresses"})
 	table.AppendBulk(data)
+	table.SetRowLine(true)
 	table.Render()
 }
 

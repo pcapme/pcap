@@ -7,20 +7,6 @@ service PCAP {
     rpc Init (InitRequest) returns (InitReply) {}
 }
 
-enum AddressType {
-    UNKNOWN_ADDRESS_TYPE = 0;
-    HARDWARE = 1;
-    IPV4 = 4;
-    IPV6 = 6;
-}
-
-enum AddressFlags {
-    UNKNOWN_ADDRESS_FLAGS = 0;
-    UNICAST = 0x1;
-    BROADCAST = 0x2;
-    MULTICAST = 0x3;
-}
-
 // via https://github.com/the-tcpdump-group/libpcap/blob/master/pcap/pcap.h
 
 // #define PCAP_IF_LOOPBACK   0x00000001 /* interface is loopback */
@@ -48,17 +34,15 @@ enum InterfaceFlags {
 }
 
 message Address {
-    AddressType type = 1;
-    string value = 2;
-    int32 prefixlen = 3;
-    string netmask = 4;
-    uint64 flags = 5;
+    string value = 1;
 }
 
 message Interface {
     string name = 1;
-    uint64 flags = 2;
-    repeated Address addresses = 3;
+    repeated Address ethernet_addresses = 2;
+    repeated Address ipv4_addresses = 3;
+    repeated Address ipv6_addresses = 4;
+    bool up = 5;
 }
 
 message InterfaceListRequest {
