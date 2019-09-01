@@ -2,7 +2,6 @@ package pcap
 
 import (
 	"context"
-	"fmt"
 	"github.com/mpontillo/pcap/api"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
@@ -56,7 +55,7 @@ func (s *server) InterfaceList(ctx context.Context, in *api.InterfaceListRequest
 			address := strings.Split(addr.String(), "/")[0]
 			ip := net.ParseIP(address)
 			if ip.To4() != nil {
-				fmt.Printf("[4] [%s] ip: %+v\n", addr.String(), ip)
+				log.Printf("[4] [%s] ip: %+v\n", addr.String(), ip)
 				// Found an IPv4 address.
 				resultInterface.Ipv4Addresses = append(
 					resultInterface.Ipv4Addresses,
@@ -64,7 +63,7 @@ func (s *server) InterfaceList(ctx context.Context, in *api.InterfaceListRequest
 						Value: address,
 					})
 			} else {
-				fmt.Printf("[6] [%s] ip: %+v\n", addr.String(), ip)
+				log.Printf("[6] [%s] ip: %+v\n", addr.String(), ip)
 				// Found an IPv6 address.
 				resultInterface.Ipv6Addresses = append(
 					resultInterface.Ipv6Addresses,
@@ -83,7 +82,7 @@ func (s *server) InterfaceList(ctx context.Context, in *api.InterfaceListRequest
 func StartUnixSocketServer() {
 	listener, err := net.Listen("unix", DefaultSocketPath)
 	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
+		log.Fatalf("Failed to Listen(): %v", err)
 	}
 	s := grpc.NewServer()
 
@@ -98,6 +97,6 @@ func StartUnixSocketServer() {
 
 	api.RegisterPCAPServer(s, &server{})
 	if err := s.Serve(listener); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		log.Fatalf("Failed to Serve(): %v", err)
 	}
 }
