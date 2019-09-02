@@ -4,6 +4,7 @@ package api;
 
 service PCAP {
     rpc InterfaceList (InterfaceListRequest) returns (InterfaceListReply) {}
+    rpc LiveCapture (CaptureRequest) returns (stream CaptureReply) {}
     rpc Init (InitRequest) returns (InitReply) {}
 }
 
@@ -71,4 +72,33 @@ message InitReply {
     }
     string alias = 3;
     repeated string interfaces = 4;
+}
+
+message CaptureRequest {
+    string interface = 1;
+    string filter = 2;
+    bool immediate_mode = 3;
+
+}
+
+message CaptureHeader {
+    int32 timezone = 1; // GMT to local correction
+    uint32 sigfigs = 2; // Timestamp accuracy
+    uint32 snaplen = 3; // Snapshot length
+    uint32 network = 4; // Data link type
+}
+
+message PacketData {
+    uint32 seconds = 1;
+    uint32 microseconds = 2;
+    uint32 original_length = 3;
+    bytes data = 4;
+}
+
+message CaptureReply {
+    oneof reply_data {
+        CaptureHeader header = 1;
+        PacketData data = 2;
+        string error = 3;
+    }
 }

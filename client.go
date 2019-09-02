@@ -2,11 +2,13 @@ package pcap
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"github.com/mpontillo/pcap/api"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -33,6 +35,32 @@ func NewUNIXSocketClient() *Client {
 
 func (c *Client) Disconnect() {
 	c.socket.Close()
+}
+
+func (c *Client) LiveCapture(args []string) {
+	// Contact the server and print out its response.
+	log.Printf("LiveCapture(%+v)", args)
+	stream, err := c.api.LiveCapture(context.Background(), &api.CaptureRequest{
+		Interface:            "wlp4s0",
+		Filter:               "arp",
+		ImmediateMode:        true,
+	})
+	if err != nil {
+		log.Fatalf("%v.LiveCapture(_) = _, %v", c.api, err)
+	}
+	for {
+		reply, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("%v.LiveCapture(_) = _, %v", c.api, err)
+		}
+		packet := reply.GetData()
+		if packet != nil {
+			fmt.Println(hex.Dump(packet.Data))
+		}
+	}
 }
 
 func (c *Client) Init(args []string) {
@@ -117,6 +145,16 @@ func Execute() {
 		},
 	}
 
+	var liveCaptureCmd = &cobra.Command{
+		Use:   "live-capture",
+		Short: "Start a live capture.",
+		Run: func(cmd *cobra.Command, args []string) {
+			client := NewUNIXSocketClient()
+			defer client.Disconnect()
+			client.LiveCapture(args)
+		},
+	}
+
 	var interfaceCmd = &cobra.Command{
 		Use:   "interface",
 		Short: "Work with interfaces on the pcap host.",
@@ -143,6 +181,7 @@ func Execute() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(interfaceCmd)
+	rootCmd.AddCommand(liveCaptureCmd)
 
 	interfaceCmd.AddCommand(interfaceListCmd)
 

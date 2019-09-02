@@ -2,6 +2,7 @@ package pcap
 
 import (
 	"context"
+	"github.com/google/gopacket/pcap"
 	"github.com/mpontillo/pcap/api"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
@@ -9,7 +10,9 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
+	"syscall"
 )
 
 type server struct{}
@@ -79,6 +82,48 @@ func (s *server) InterfaceList(ctx context.Context, in *api.InterfaceListRequest
 	return result, nil
 }
 
+func (s *server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCaptureServer) error {
+	inactiveHandle, err := pcap.NewInactiveHandle(in.Interface)
+	defer inactiveHandle.CleanUp()
+	if err != nil {
+		return err
+	}
+	err = inactiveHandle.SetImmediateMode(in.ImmediateMode)
+	if err != nil {
+		return err
+	}
+	err = inactiveHandle.SetBufferSize(1024 * 1024 * 4096)
+	if err != nil {
+		return err
+	}
+	err = inactiveHandle.SetPromisc(false)
+	if err != nil {
+		return err
+	}
+	handle, err := inactiveHandle.Activate()
+	defer handle.Close()
+	if err != nil {
+		return err
+	}
+	for {
+		data, captureInfo, err := handle.ReadPacketData()
+		if err != nil {
+			return err
+		}
+		packetData := &api.PacketData{
+			Seconds:              uint32(captureInfo.Timestamp.Second()),
+			Microseconds:         uint32(captureInfo.Timestamp.Nanosecond()) * 1000,
+			OriginalLength:       uint32(captureInfo.Length),
+			Data:                 data,
+		}
+		err = stream.Send(&api.CaptureReply{
+			ReplyData: &api.CaptureReply_Data{Data: packetData},
+		})
+		if err != nil {
+			return err
+		}
+	}
+}
 func StartUnixSocketServer() {
 	listener, err := net.Listen("unix", DefaultSocketPath)
 	if err != nil {
