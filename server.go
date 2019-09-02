@@ -124,7 +124,20 @@ func (s *server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCapture
 		}
 	}
 }
+
+func registerSigQuitHandler() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGQUIT)
+	buf := make([]byte, 1<<20)
+	for {
+		<-sigs
+		stacklen := runtime.Stack(buf, true)
+		log.Printf("=== received SIGQUIT ===\n*** goroutine dump...\n%s\n*** end\n", buf[:stacklen])
+	}
+}
+
 func StartUnixSocketServer() {
+	go registerSigQuitHandler()
 	listener, err := net.Listen("unix", DefaultSocketPath)
 	if err != nil {
 		log.Fatalf("Failed to Listen(): %v", err)
