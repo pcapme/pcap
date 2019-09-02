@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 )
 
 type server struct{}
@@ -92,14 +93,32 @@ func (s *server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCapture
 	if err != nil {
 		return err
 	}
-	err = inactiveHandle.SetBufferSize(1024 * 1024 * 4096)
+	err = inactiveHandle.SetSnapLen(int(in.Snaplen))
 	if err != nil {
 		return err
 	}
-	err = inactiveHandle.SetPromisc(false)
+	bufferSize := in.BufferSizeBytes
+	if bufferSize == 0 {
+		bufferSize = 1024 * 1024 * 4
+	}
+	err = inactiveHandle.SetBufferSize(int(bufferSize))
 	if err != nil {
 		return err
 	}
+	err = inactiveHandle.SetPromisc(in.PromiscuousMode)
+	if err != nil {
+		return err
+	}
+	err = inactiveHandle.SetRFMon(in.RfMonitor)
+	if err != nil {
+		return err
+	}
+	err = inactiveHandle.SetTimeout(time.Duration(in.TimeoutNanoseconds))
+	if err != nil {
+		return err
+	}
+	// XXX: Need to implement listing supported timestamp sources, and setting the timestamp source.
+	// See also: 'man pcap_set_tstamp_type'.
 	handle, err := inactiveHandle.Activate()
 	defer handle.Close()
 	if err != nil {

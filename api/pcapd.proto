@@ -77,8 +77,12 @@ message InitReply {
 message CaptureRequest {
     string interface = 1;
     string filter = 2;
-    bool immediate_mode = 3;
-
+    uint32 snaplen = 3;
+    bool immediate_mode = 4;
+    bool promiscuous_mode = 5;
+    bool rf_monitor = 6;
+    int64 timeout_nanoseconds = 7;
+    uint32 buffer_size_bytes = 8;
 }
 
 message CaptureHeader {
