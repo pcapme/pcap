@@ -124,6 +124,7 @@ func (s *server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCapture
 	if err != nil {
 		return err
 	}
+	// XXX: Send over an api.CaptureHeader object.
 	for {
 		data, captureInfo, err := handle.ReadPacketData()
 		if err != nil {
