@@ -41,9 +41,9 @@ func (c *Client) LiveCapture(args []string) {
 	// Contact the server and print out its response.
 	log.Printf("LiveCapture(%+v)", args)
 	stream, err := c.api.LiveCapture(context.Background(), &api.CaptureRequest{
-		Interface:            "wlp4s0",
-		Filter:               "arp",
-		ImmediateMode:        true,
+		Interface:     "wlp4s0",
+		Filter:        "arp",
+		ImmediateMode: true,
 	})
 	if err != nil {
 		log.Fatalf("%v.LiveCapture(_) = _, %v", c.api, err)

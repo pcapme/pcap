@@ -111,10 +111,10 @@ func (s *server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCapture
 			return err
 		}
 		packetData := &api.PacketData{
-			Seconds:              uint32(captureInfo.Timestamp.Second()),
-			Microseconds:         uint32(captureInfo.Timestamp.Nanosecond()) * 1000,
-			OriginalLength:       uint32(captureInfo.Length),
-			Data:                 data,
+			Seconds:        captureInfo.Timestamp.Unix(),
+			Microseconds:   uint32(captureInfo.Timestamp.Nanosecond()) * 1000,
+			OriginalLength: uint32(captureInfo.Length),
+			Data:           data,
 		}
 		err = stream.Send(&api.CaptureReply{
 			ReplyData: &api.CaptureReply_Data{Data: packetData},

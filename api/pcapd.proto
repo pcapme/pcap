@@ -89,7 +89,7 @@ message CaptureHeader {
 }
 
 message PacketData {
-    uint32 seconds = 1;
+    int64 seconds = 1;
     uint32 microseconds = 2;
     uint32 original_length = 3;
     bytes data = 4;
