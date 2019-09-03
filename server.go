@@ -2,6 +2,7 @@ package pcap
 
 import (
 	"context"
+	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 	"github.com/mpontillo/pcap/api"
 	"golang.org/x/sys/unix"
@@ -17,6 +18,14 @@ import (
 )
 
 type server struct{}
+
+// This channel will be closed when the server is gracefully stopping. Any streams in-progress
+// will then also be closed.
+var shuttingDown chan int
+
+func init() {
+	shuttingDown = make(chan int)
+}
 
 func (s *server) Init(ctx context.Context, in *api.InitRequest) (*api.InitReply, error) {
 	log.Printf("Init(%+v)", in)
@@ -83,6 +92,12 @@ func (s *server) InterfaceList(ctx context.Context, in *api.InterfaceListRequest
 	return result, nil
 }
 
+type packetData struct {
+	data []byte
+	ci   gopacket.CaptureInfo
+	err  error
+}
+
 func (s *server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCaptureServer) error {
 	log.Printf("LiveCapture(%+v)", in)
 	inactiveHandle, err := pcap.NewInactiveHandle(in.Interface)
@@ -133,21 +148,38 @@ func (s *server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCapture
 	}
 	// XXX: Send over an api.CaptureHeader object.
 	for {
-		data, captureInfo, err := handle.ReadPacketData()
-		if err != nil {
-			return err
-		}
-		packetData := &api.PacketData{
-			Seconds:        captureInfo.Timestamp.Unix(),
-			Microseconds:   uint32(captureInfo.Timestamp.Nanosecond()) * 1000,
-			OriginalLength: uint32(captureInfo.Length),
-			Data:           data,
-		}
-		err = stream.Send(&api.CaptureReply{
-			ReplyData: &api.CaptureReply_Data{Data: packetData},
-		})
-		if err != nil {
-			return err
+		packet := make(chan *packetData)
+		go func() {
+			data, captureInfo, err := handle.ReadPacketData()
+			packet <- &packetData{data, captureInfo, err}
+
+		}()
+		select {
+		case _, closed := <-shuttingDown:
+			if closed == false {
+				log.Printf("Stopped LiveCapture(%+v) via interrupt.\n", in)
+				return nil
+			}
+		case <-stream.Context().Done():
+			log.Println("Context().Done()")
+			// Connection closed by remote host.
+			return nil
+		case p := <-packet:
+			if p.err != nil {
+				return p.err
+			}
+			packetData := &api.PacketData{
+				Seconds:        p.ci.Timestamp.Unix(),
+				Microseconds:   uint32(p.ci.Timestamp.Nanosecond()) * 1000,
+				OriginalLength: uint32(p.ci.Length),
+				Data:           p.data,
+			}
+			err = stream.Send(&api.CaptureReply{
+				ReplyData: &api.CaptureReply_Data{Data: packetData},
+			})
+			if err != nil {
+				return err
+			}
 		}
 	}
 }
@@ -177,6 +209,9 @@ func StartUnixSocketServer() {
 	context.WithCancel(context.Background())
 	go func() {
 		<-c
+		log.Println("Interrupt received; stopping gracefully...")
+		// Before we stop the service, we need to notify any streams that we're shutting down.
+		close(shuttingDown)
 		s.GracefulStop()
 	}()
 
