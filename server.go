@@ -155,8 +155,8 @@ func (s *server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCapture
 
 		}()
 		select {
-		case _, closed := <-shuttingDown:
-			if closed == false {
+		case _, running := <-shuttingDown:
+			if running == false {
 				log.Printf("Stopped LiveCapture(%+v) via interrupt.\n", in)
 				return nil
 			}
