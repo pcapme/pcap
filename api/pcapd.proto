@@ -103,6 +103,5 @@ message CaptureReply {
     oneof reply_data {
         CaptureHeader header = 1;
         PacketData data = 2;
-        string error = 3;
     }
 }
