@@ -37,16 +37,15 @@ func (c *Client) Disconnect() {
 	c.socket.Close()
 }
 
-func (c *Client) LiveCapture(args []string) {
+func (c *Client) LiveCapture(ifname string, filter string) {
 	// Contact the server and print out its response.
-	log.Printf("LiveCapture(%+v)", args)
 	stream, err := c.api.LiveCapture(context.Background(), &api.CaptureRequest{
-		Interface:     "wlp4s0",
-		Filter:        "arp",
+		Interface:     ifname,
+		Filter:        filter,
 		ImmediateMode: true,
 	})
 	if err != nil {
-		log.Fatalf("%v.LiveCapture(_) = _, %v", c.api, err)
+		log.Fatalf("%v", err)
 	}
 	for {
 		reply, err := stream.Recv()
@@ -54,7 +53,7 @@ func (c *Client) LiveCapture(args []string) {
 			break
 		}
 		if err != nil {
-			log.Fatalf("%v.LiveCapture(_) = _, %v", c.api, err)
+			log.Fatalf("%v", err)
 		}
 		packet := reply.GetData()
 		if packet != nil {
@@ -146,12 +145,18 @@ func Execute() {
 	}
 
 	var liveCaptureCmd = &cobra.Command{
-		Use:   "live-capture",
+		Use:   "live-capture <interface> [filter]",
 		Short: "Start a live capture.",
+		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			filter := ""
+			if len(args) >= 2 {
+				filter = args[1]
+			}
+			ifname := args[0]
 			client := NewUNIXSocketClient()
 			defer client.Disconnect()
-			client.LiveCapture(args)
+			client.LiveCapture(ifname, filter)
 		},
 	}
 

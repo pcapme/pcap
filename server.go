@@ -84,6 +84,7 @@ func (s *server) InterfaceList(ctx context.Context, in *api.InterfaceListRequest
 }
 
 func (s *server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCaptureServer) error {
+	log.Printf("LiveCapture(%+v)", in)
 	inactiveHandle, err := pcap.NewInactiveHandle(in.Interface)
 	defer inactiveHandle.CleanUp()
 	if err != nil {
@@ -111,7 +112,7 @@ func (s *server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCapture
 	}
 	err = inactiveHandle.SetRFMon(in.RfMonitor)
 	if err != nil {
-		return err
+		log.Printf("%s: %s", in.Interface, err.Error())
 	}
 	err = inactiveHandle.SetTimeout(time.Duration(in.TimeoutNanoseconds))
 	if err != nil {
@@ -120,6 +121,12 @@ func (s *server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCapture
 	// XXX: Need to implement listing supported timestamp sources, and setting the timestamp source.
 	// See also: 'man pcap_set_tstamp_type'.
 	handle, err := inactiveHandle.Activate()
+	if len(in.Filter) > 0 {
+		err = handle.SetBPFFilter(in.Filter)
+		if err != nil {
+			return err
+		}
+	}
 	defer handle.Close()
 	if err != nil {
 		return err
