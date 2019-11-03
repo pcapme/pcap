@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
-	"github.com/google/gopacket/pcapgo"
 )
 
 const (
@@ -23,7 +22,7 @@ type CaptureRequest struct {
 }
 
 func Capture(request CaptureRequest) error {
-	handle, err := pcapgo.NewEthernetHandle(request.Interfaces[0])
+	handle, err := pcap.NewInactiveHandle(request.Interfaces[0])
 	if err != nil {
 		return err
 	}
@@ -33,7 +32,7 @@ func Capture(request CaptureRequest) error {
 		return err
 	}
 	fmt.Printf("BPF: %+v\n", bpf)
-	defer handle.Close()
+	defer handle.CleanUp()
 	return nil
 }
 
