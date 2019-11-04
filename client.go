@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/pcapgo"
 	"github.com/mpontillo/pcap/api"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
@@ -37,7 +40,7 @@ func (c *Client) Disconnect() {
 	c.socket.Close()
 }
 
-func (c *Client) LiveCapture(ifname string, filter string) {
+func (c *Client) LiveCapture(ifname string, filter string, format string) {
 	// Contact the server and print out its response.
 	stream, err := c.api.LiveCapture(context.Background(), &api.CaptureRequest{
 		Interface:     ifname,
@@ -47,6 +50,17 @@ func (c *Client) LiveCapture(ifname string, filter string) {
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
+	var writer *pcapgo.Writer
+	// XXX this should be moved after GetHeader below to get the snaplen.
+	switch format {
+	case "hex":
+	case "pcap":
+		writer = pcapgo.NewWriter(os.Stdout)
+		err = writer.WriteFileHeader(65536, layers.LinkTypeEthernet)
+		if err != nil {
+			log.Fatalf("%v", err)
+		}
+	}
 	for {
 		reply, err := stream.Recv()
 		if err == io.EOF {
@@ -55,9 +69,29 @@ func (c *Client) LiveCapture(ifname string, filter string) {
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
+		header := reply.GetHeader()
+		if header != nil {
+		}
 		packet := reply.GetData()
 		if packet != nil {
-			fmt.Println(hex.Dump(packet.Data))
+			switch format {
+			case "hex":
+				fmt.Println(hex.Dump(packet.Data))
+			case "pcap":
+				t := time.Unix(packet.Seconds, int64(packet.Microseconds*1000))
+				ci := gopacket.CaptureInfo{
+					Timestamp:      t,
+					CaptureLength:  len(packet.Data),
+					Length:         int(packet.OriginalLength),
+					InterfaceIndex: 1, // XXX
+				}
+				if writer != nil {
+					err := writer.WritePacket(ci, packet.Data)
+					if err != nil {
+						log.Fatalf("%v", err)
+					}
+				}
+			}
 		}
 	}
 }
@@ -116,6 +150,16 @@ func (c *Client) InterfaceList(all bool) {
 	table.Render()
 }
 
+func validateOutputFormat(outputFormat string, cmd *cobra.Command) {
+	switch outputFormat {
+	case "hex":
+	case "pcap":
+	default:
+		cmd.Usage()
+		os.Exit(1)
+	}
+}
+
 func Execute() {
 	var rootCmd = &cobra.Command{
 		Use:   "pcap",
@@ -144,11 +188,13 @@ func Execute() {
 		},
 	}
 
+	var liveCaptureFormat string
 	var liveCaptureCmd = &cobra.Command{
-		Use:   "live-capture <interface> [filter]",
+		Use:   "live-capture <interface> [filter] [--format=<hex|pcap>]",
 		Short: "Start a live capture.",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			validateOutputFormat(liveCaptureFormat, cmd)
 			filter := ""
 			if len(args) >= 2 {
 				filter = args[1]
@@ -156,9 +202,12 @@ func Execute() {
 			ifname := args[0]
 			client := NewUNIXSocketClient()
 			defer client.Disconnect()
-			client.LiveCapture(ifname, filter)
+			client.LiveCapture(ifname, filter, liveCaptureFormat)
 		},
 	}
+	liveCaptureCmd.Flags().StringVarP(
+		&liveCaptureFormat, "format", "f", "hex",
+		"Output format. Can be 'hex' or 'pcap'.")
 
 	var interfaceCmd = &cobra.Command{
 		Use:   "interface",
