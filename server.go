@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
-	"github.com/mpontillo/pcap/api"
+	"github.com/pcapme/pcap/api"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 	"log"
