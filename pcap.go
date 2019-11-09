@@ -7,8 +7,6 @@ import (
 )
 
 const (
-	DefaultSocketPath = "/run/pcapd/socket"
-
 	// Bytes to save per-packet.
 	DefaultSnapLen = 65535
 

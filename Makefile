@@ -4,7 +4,14 @@ BINARIES=$(notdir $(wildcard cmd/*))
 GOPATH=$(shell go env GOPATH)
 GOBIN=$(GOPATH)/bin
 
-PCAPD_RUN=/run/pcapd
+OS_NAME=$(shell uname -s | tr A-Z a-z)
+
+ifeq ($(OS_NAME),linux)
+    PCAPD_RUN=/run/pcapd
+endif
+ifeq ($(OS_NAME),darwin)
+    PCAPD_RUN=/tmp/pcapd
+endif
 DEFAULT_SOCKET_PATH=$(PCAPD_RUN)/socket
 
 all: test build
@@ -27,10 +34,16 @@ clean:
 
 install: api
 	go install ./...
-	sudo setcap cap_net_raw+ep $(GOBIN)/pcapd
-	sudo mkdir -p /run/pcapd
-	sudo chown $(shell id -u):$(shell id -g) /run/pcapd
-	getcap $(GOBIN)/pcapd
+	sudo mkdir -p $(PCAPD_RUN)
+	sudo chown $(shell id -u):$(shell id -g) $(PCAPD_RUN)
+ifeq ($(OS_NAME),linux)
+	    sudo setcap cap_net_raw+ep $(GOBIN)/pcapd
+	    getcap $(GOBIN)/pcapd
+endif
+ifeq ($(OS_NAME),darwin)
+	    sudo chown root $(GOBIN)/pcapd
+	    sudo chmod 4775 $(GOBIN)/pcapd
+endif
 
 run: install
 	rm -f $(DEFAULT_SOCKET_PATH)
