@@ -201,6 +201,10 @@ func StartUnixSocketServer() {
 	if err != nil {
 		log.Fatalf("Failed to Listen(): %v", err)
 	}
+	// User/group permission, but not just anyone.
+	if err := os.Chmod(DefaultSocketPath, 0770); err != nil {
+		log.Fatal(err)
+	}
 	s := grpc.NewServer()
 
 	c := make(chan os.Signal, 1)
