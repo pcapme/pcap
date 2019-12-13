@@ -6,28 +6,23 @@ import (
 	"github.com/google/gopacket/pcap"
 	"github.com/pcapme/pcap/api"
 	"golang.org/x/sys/unix"
-	"google.golang.org/grpc"
 	"log"
 	"net"
-	"os"
-	"os/signal"
-	"runtime"
 	"strings"
-	"syscall"
 	"time"
 )
 
-type server struct{}
+type Server struct{}
 
 // This channel will be closed when the server is gracefully stopping. Any streams in-progress
 // will then also be closed.
-var shuttingDown chan int
+var ShuttingDown chan int
 
 func init() {
-	shuttingDown = make(chan int)
+	ShuttingDown = make(chan int)
 }
 
-func (s *server) Add(ctx context.Context, in *api.AddRequest) (*api.AddReply, error) {
+func (s *Server) Add(ctx context.Context, in *api.AddRequest) (*api.AddReply, error) {
 	log.Printf("Add(%+v)", in)
 	log.Printf("GetOptionalName() = %+v", in.GetOptionalName())
 	log.Printf("GetOptionalTimeout() = %+v", in.GetOptionalTimeout())
@@ -42,7 +37,7 @@ func (s *server) Add(ctx context.Context, in *api.AddRequest) (*api.AddReply, er
 	}, nil
 }
 
-func (s *server) InterfaceList(ctx context.Context, in *api.InterfaceListRequest) (*api.InterfaceListReply, error) {
+func (s *Server) InterfaceList(ctx context.Context, in *api.InterfaceListRequest) (*api.InterfaceListReply, error) {
 	log.Printf("InterfaceList(%+v)", in)
 	result := &api.InterfaceListReply{
 		Success: false,
@@ -102,7 +97,7 @@ type packetData struct {
 	err  error
 }
 
-func (s *server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCaptureServer) error {
+func (s *Server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCaptureServer) error {
 	log.Printf("LiveCapture(%+v)", in)
 	inactiveHandle, err := pcap.NewInactiveHandle(in.Interface)
 	if err != nil {
@@ -159,7 +154,7 @@ func (s *server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCapture
 
 		}()
 		select {
-		case _, running := <-shuttingDown:
+		case _, running := <-ShuttingDown:
 			if running == false {
 				log.Printf("Stopped LiveCapture(%+v) via interrupt.\n", in)
 				return nil
@@ -185,46 +180,5 @@ func (s *server) LiveCapture(in *api.CaptureRequest, stream api.PCAP_LiveCapture
 				return err
 			}
 		}
-	}
-}
-
-func registerSigQuitHandler() {
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGQUIT)
-	buf := make([]byte, 1<<20)
-	for {
-		<-sigs
-		stacklen := runtime.Stack(buf, true)
-		log.Printf("=== received SIGQUIT ===\n*** goroutine dump...\n%s\n*** end\n", buf[:stacklen])
-	}
-}
-
-func StartUnixSocketServer() {
-	go registerSigQuitHandler()
-	listener, err := net.Listen("unix", DefaultSocketPath)
-	if err != nil {
-		log.Fatalf("Failed to Listen(): %v", err)
-	}
-	// User/group permission, but not just anyone.
-	if err := os.Chmod(DefaultSocketPath, 0770); err != nil {
-		log.Fatal(err)
-	}
-	s := grpc.NewServer()
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	context.WithCancel(context.Background())
-	go func() {
-		<-c
-		log.Println("Interrupt received; stopping gracefully...")
-		// Before we stop the service, we need to notify any streams that we're shutting down.
-		close(shuttingDown)
-		s.GracefulStop()
-	}()
-
-	api.RegisterPCAPServer(s, &server{})
-	if err := s.Serve(listener); err != nil {
-		log.Fatalf("Failed to Serve(): %v", err)
 	}
 }
