@@ -7,8 +7,8 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcapgo"
-	"github.com/pcapme/pcap/api"
 	"github.com/olekukonko/tablewriter"
+	"github.com/pcapme/pcap/api"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"io"
@@ -96,19 +96,21 @@ func (c *Client) LiveCapture(ifname string, filter string, format string) {
 	}
 }
 
-func (c *Client) Init(args []string) {
+func (c *Client) Add(interfaces []string, filter string, name string, snaplen uint32, duration uint32) {
 	// Contact the server and print out its response.
-	iface := defaultInterface
-	if len(args) > 0 {
-		iface = args[0]
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	ifaces := []string{iface}
-	initRequest := &api.InitRequest{}
-	initRequest.OptionalFilter = &api.InitRequest_Filter{Filter: "arp"}
-	initRequest.Interfaces = ifaces
-	r, err := c.api.Init(ctx, initRequest)
+	addRequest := &api.AddRequest{}
+	addRequest.Interfaces = interfaces
+	addRequest.Filter = filter
+	addRequest.OptionalName = &api.AddRequest_Name{Name: name}
+	if duration == 0 {
+		addRequest.OptionalTimeout = &api.AddRequest_DurationForever{DurationForever: true}
+	} else {
+		addRequest.OptionalTimeout = &api.AddRequest_DurationSeconds{DurationSeconds: duration}
+	}
+	addRequest.Snaplen = snaplen
+	r, err := c.api.Add(ctx, addRequest)
 	if err != nil {
 		log.Fatalf("Could not initialize: %v", err)
 	}
@@ -178,15 +180,32 @@ func Execute() {
 			fmt.Println("pcap version v0.0.1")
 		},
 	}
-	var initCmd = &cobra.Command{
-		Use:   "init",
-		Short: "Initialize a new capture definition.",
+
+	var addSnapLen uint32
+	var addDuration uint32
+	var addFilter string
+	var addName string
+	var addCmd = &cobra.Command{
+		Use: "add <interface> [interface...]\n" +
+			"           [--filter <filter>] [--name <name>] [--snaplen <snaplen>] [--duration <seconds>]",
+		Short: "Add a new persistent capture definition.",
+		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			client := NewUNIXSocketClient()
 			defer client.Disconnect()
-			client.Init(args)
+			client.Add(args, addFilter, addName, addSnapLen, addDuration)
 		},
 	}
+	addCmd.Flags().StringVarP(
+		&addFilter, "filter", "f", "",
+		"Capture filter.")
+	addCmd.Flags().StringVarP(
+		&addName, "name", "n", "",
+		"Friendly name for capture.")
+	addCmd.Flags().Uint32VarP(&addSnapLen, "snaplen", "s", 0,
+		"Snapshot length (number of bytes per packet to capture).")
+	addCmd.Flags().Uint32VarP(&addDuration, "duration", "d", 0,
+		"Duration of capture (seconds).")
 
 	var liveCaptureFormat string
 	var liveCaptureCmd = &cobra.Command{
@@ -233,7 +252,7 @@ func Execute() {
 		"List all interfaces. (By default, only includes those that are link-up.)")
 
 	rootCmd.AddCommand(versionCmd)
-	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(interfaceCmd)
 	rootCmd.AddCommand(liveCaptureCmd)
 

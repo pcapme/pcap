@@ -5,7 +5,7 @@ package api;
 service PCAP {
     rpc InterfaceList (InterfaceListRequest) returns (InterfaceListReply) {}
     rpc LiveCapture (CaptureRequest) returns (stream CaptureReply) {}
-    rpc Init (InitRequest) returns (InitReply) {}
+    rpc Add (AddRequest) returns (AddReply) {}
 }
 
 // via https://github.com/the-tcpdump-group/libpcap/blob/master/pcap/pcap.h
@@ -55,23 +55,22 @@ message InterfaceListReply {
     repeated Interface interfaces = 2;
 }
 
-message InitRequest {
-    oneof optional_filter {
-        string filter = 1;
+message AddRequest {
+    repeated string interfaces = 1;
+    oneof optional_name {
+        string name = 2;
     }
-    oneof optional_alias {
-        string alias = 2;
+    string filter = 3;
+    uint32 snaplen = 4;
+    oneof optional_timeout {
+        bool duration_forever = 5;
+        uint32 duration_seconds = 6;
     }
-    repeated string interfaces = 3;
 }
 
-message InitReply {
+message AddReply {
     bool success = 1;
-    oneof optional_filter {
-        string filter = 2;
-    }
-    string alias = 3;
-    repeated string interfaces = 4;
+    string name = 2;
 }
 
 message CaptureRequest {

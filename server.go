@@ -27,13 +27,17 @@ func init() {
 	shuttingDown = make(chan int)
 }
 
-func (s *server) Init(ctx context.Context, in *api.InitRequest) (*api.InitReply, error) {
-	log.Printf("Init(%+v)", in)
-	log.Printf("GetOptionalFilter() = %+v", in.GetOptionalFilter())
+func (s *server) Add(ctx context.Context, in *api.AddRequest) (*api.AddReply, error) {
+	log.Printf("Add(%+v)", in)
+	log.Printf("GetOptionalName() = %+v", in.GetOptionalName())
+	log.Printf("GetOptionalTimeout() = %+v", in.GetOptionalTimeout())
+	log.Printf("GetDurationForever() = %+v", in.GetDurationForever())
+	log.Printf("GetDurationSeconds() = %+v", in.GetDurationSeconds())
+	log.Printf("GetSnaplen() = %+v", in.GetSnaplen())
 	filter := in.GetFilter()
 	log.Printf("GetFilter() = %+v", filter)
 	err := Capture(CaptureRequest{Filter: filter, Interfaces: in.GetInterfaces()})
-	return &api.InitReply{
+	return &api.AddReply{
 		Success: err == nil,
 	}, nil
 }
