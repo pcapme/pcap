@@ -2,8 +2,10 @@
 
 package main
 
-import "github.com/pcapme/pcap"
+import (
+	"github.com/pcapme/pcap/server"
+)
 
 func main() {
-	pcap.StartUnixSocketServer()
+	server.StartUnixSocketServer()
 }

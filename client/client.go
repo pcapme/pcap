@@ -1,4 +1,4 @@
-package pcap
+package client
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/google/gopacket/pcapgo"
 	"github.com/olekukonko/tablewriter"
 	"github.com/pcapme/pcap/api"
+	"github.com/pcapme/pcap/server"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"io"
@@ -27,7 +28,7 @@ type Client struct {
 
 func NewUNIXSocketClient() *Client {
 	connection := new(Client)
-	socket, err := grpc.Dial("unix://"+DefaultSocketPath, grpc.WithInsecure())
+	socket, err := grpc.Dial("unix://"+server.DefaultSocketPath, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}

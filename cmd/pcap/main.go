@@ -1,7 +1,9 @@
 package main
 
-import "github.com/pcapme/pcap"
+import (
+	"github.com/pcapme/pcap/client"
+)
 
 func main() {
-	pcap.Execute()
+	client.Execute()
 }
