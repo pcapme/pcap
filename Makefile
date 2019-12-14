@@ -36,6 +36,7 @@ install: api
 	go install ./...
 	sudo mkdir -p $(PCAPD_RUN)
 	sudo chown $(shell id -u):$(shell id -g) $(PCAPD_RUN)
+	test -S $(PCAPD_RUN)/socket && sudo chown $(shell id -u):$(shell id -g) $(PCAPD_RUN)/socket
 ifeq ($(OS_NAME),linux)
 	    sudo setcap cap_net_raw+ep $(GOBIN)/pcapd
 	    getcap $(GOBIN)/pcapd
