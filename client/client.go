@@ -19,8 +19,6 @@ import (
 	"time"
 )
 
-const defaultInterface = "eth0"
-
 type Client struct {
 	socket *grpc.ClientConn
 	api    api.PCAPClient
