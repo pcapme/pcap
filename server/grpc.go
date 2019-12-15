@@ -31,10 +31,16 @@ func (s *Server) Add(ctx context.Context, in *api.AddRequest) (*api.AddReply, er
 	log.Printf("GetSnaplen() = %+v", in.GetSnaplen())
 	filter := in.GetFilter()
 	log.Printf("GetFilter() = %+v", filter)
-	err := Capture(CaptureRequest{Filter: filter, Interfaces: in.GetInterfaces()})
+	var timeout time.Time
+	timeoutSeconds := in.GetDurationSeconds()
+	if timeoutSeconds > 0 {
+		timeout = time.Now().Local().Add(time.Second * time.Duration(timeoutSeconds))
+	}
+	result := AddCaptureState(NewCaptureState(
+		in.GetName(), in.GetInterfaces(), filter, int(in.GetSnaplen()), timeout))
 	return &api.AddReply{
-		Success: err == nil,
-	}, nil
+		Success: result.Error == nil,
+	}, result.Error
 }
 
 func (s *Server) InterfaceList(ctx context.Context, in *api.InterfaceListRequest) (*api.InterfaceListReply, error) {

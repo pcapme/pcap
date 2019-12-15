@@ -61,7 +61,7 @@ message AddRequest {
         string name = 2;
     }
     string filter = 3;
-    uint32 snaplen = 4;
+    int32 snaplen = 4;
     oneof optional_timeout {
         bool duration_forever = 5;
         uint32 duration_seconds = 6;

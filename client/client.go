@@ -95,7 +95,7 @@ func (c *Client) LiveCapture(ifname string, filter string, format string) {
 	}
 }
 
-func (c *Client) Add(interfaces []string, filter string, name string, snaplen uint32, duration uint32) {
+func (c *Client) Add(interfaces []string, filter string, name string, snaplen int32, duration uint32) {
 	// Contact the server and print out its response.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -180,7 +180,7 @@ func Execute() {
 		},
 	}
 
-	var addSnapLen uint32
+	var addSnapLen int32
 	var addDuration uint32
 	var addFilter string
 	var addName string
@@ -201,7 +201,7 @@ func Execute() {
 	addCmd.Flags().StringVarP(
 		&addName, "name", "n", "",
 		"Friendly name for capture.")
-	addCmd.Flags().Uint32VarP(&addSnapLen, "snaplen", "s", 0,
+	addCmd.Flags().Int32VarP(&addSnapLen, "snaplen", "s", 0,
 		"Snapshot length (number of bytes per packet to capture).")
 	addCmd.Flags().Uint32VarP(&addDuration, "duration", "d", 0,
 		"Duration of capture (seconds).")
