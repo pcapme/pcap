@@ -21,5 +21,3 @@ func TestCaptureState(t *testing.T) {
 	var b = captureStates.ToYAML()
 	fmt.Printf("%s", string(b))
 }
-
-
