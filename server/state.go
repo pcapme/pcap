@@ -131,7 +131,7 @@ func NewCaptureState(name string, interfaces []string, filter string, snaplen in
 		Filter:         filter,
 		SnapshotLength: snaplen,
 		Deadline:       deadline,
-		state:          make(map[string]*InterfaceCaptureState, len(interfaces)),
+		state:          make(map[string]InterfaceCaptureState, len(interfaces)),
 	}
 }
 
